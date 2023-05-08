@@ -1,17 +1,23 @@
-lista = {'imagem': r'Result URL:\s*(\S+)',
-                 'provedor': r'ISP:\s+(.+)\n',
-                 'servidor': r'Server:\s+(.+)\n',
-                 'download': r'Download:\s+([\d.]+)\s+Mbps',
-                 'upload': r'Upload:\s+([\d.]+)\s+Mbps',
-                 'ping': r'Idle Latency:\s+([\d.]+)\s+ms',
-                 'packet_loss': r'Packet Loss:\s+([\d.]+)%'}
+import socket
+import datetime
 
-for item in lista:
-    variavel = item * 2
-    # aqui o escopo da variável "variavel" se limita ao loop for
-    print(item)
+data = datetime.date.today().strftime("%d/%m/%Y")
+print(data)
 
-for c in range(5):
-    print(c)
+data_atual = datetime.date.today()
+print(data_atual)
 
-print(c)
+# Imprimir a data no formato DD/MM/YYYY
+print("Data atual:", data_atual.strftime("%d/%m/%Y"))
+
+# Obter apenas a hora atual
+hora_atual = datetime.datetime.now().time()
+
+# Imprimir a hora no formato HH:MM:SS
+print("Hora atual:", hora_atual.strftime("%H:%M:%S"))
+
+ip = socket.gethostbyname(socket.gethostname())
+nome = socket.gethostname()
+
+print(ip)
+print(nome)

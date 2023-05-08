@@ -1,9 +1,13 @@
 from subprocess import *
-import os
-import re
-import sys
+import pymsteams, os, re, sys, socket, datetime
 
+# Informações da máquina utilizadas pelo programa
 TEMP = os.environ['TEMP']
+NOME_MAQUINA = socket.gethostname()
+IP_MAQUINA = socket.gethostbyname(socket.gethostname())
+HORA = datetime.datetime.now().time().strftime("%H:%M:%S")
+DATA = datetime.date.today().strftime("%d/%m/%Y")
+
 # Define o caminho do programa
 # Se executado pelo exe(Pyinstaller), define a pasta _MEIxxxx como caminho.
 # Se não, define a pasta "Sources" onde o programa está sendo executado como caminho. (Requer o speedtest.exe no diretorio)
@@ -52,7 +56,7 @@ while tentativa < 3:
              'download': r'Download:\s+([\d.]+)\s+Mbps',
              'upload': r'Upload:\s+([\d.]+)\s+Mbps',
              'ping': r'Idle Latency:\s+([\d.]+)\s+ms',
-             'packet_loss': r'Packet Loss:\s+([\d.]+)%'}
+             'packet_loss': r'Packet Loss:\s+([\d.]+)' + '%'}
     
     try:
         # Captura as informações de saida através de expresões regex. ===ESTUDAR MAIS SOBRE===
@@ -83,17 +87,36 @@ while tentativa < 3:
         print('Erro desconhecido durante o teste')
         print(error.__class__)
 
-    print(f'\nResultado do Teste:'
-          f'\nProvedor Interno: {dados["provedor"]}'
-          f'\nServidor Destino: {dados["servidor"]}'
-          f'\nLatencia: {dados["ping"]} ms'
-          f'\nDownload: {dados["download"]} Mbps'
-          f'\nUpload: {dados["upload"]} Mbps'
-          f'\nPacket Loss: {dados["packet_loss"]}'
-          f'\nImagem: {dados["imagem"]}')
+    resultado_formatado = f'Resultado do Teste: \
+          \nProvedor Interno: {dados["provedor"]} \
+          \nServidor Destino: {dados["servidor"]} \
+          \nLatencia: {dados["ping"]} ms \
+          \nDownload: {dados["download"]} Mbps\
+          \nUpload: {dados["upload"]} Mbps\
+          \nPacket Loss: {dados["packet_loss"]}\
+          \nImagem: {dados["imagem"] + ".png"}'
+    
+    print(resultado_formatado)
     break
 
 if tentativa >= 3:
     print('\nNúmeros de tentativas excedido, execute o programa novamente!')
+    input('\nPressione Enter para sair...')
+    exit()
+
+# EM TESTES (FUNCIONAL)
+Teams = pymsteams.connectorcard("Seu Webhook Teams")
+
+mensagem = f'Maquina: {NOME_MAQUINA} ({IP_MAQUINA})\
+            \n {DATA} as {HORA}\
+            \n ======================== \
+            \n{resultado_formatado}'
+
+Teams.text(mensagem)
+
+try:
+    Teams.send()
+except Exception as error:
+    print(error.__class__)
 
 input('\nPressione Enter para sair...')
