@@ -3,29 +3,28 @@ import os
 import re
 import sys
 
-
 TEMP = os.environ['TEMP']
-
 # Define o caminho do programa
 # Se executado pelo exe(Pyinstaller), define a pasta _MEIxxxx como caminho.
-# Se não, define a pasta onde o programa está sendo executado. (Requer o speedtest.exe no mesmo diretorio)
-try:  
-    #Executando pelo arquivo binario  
+# Se não, define a pasta "Sources" onde o programa está sendo executado como caminho. (Requer o speedtest.exe no diretorio)
+try:
+    # Executando pelo arquivo binario
     caminho_programa = sys._MEIPASS + '\\speedtest.exe'
-    
+
 except Exception as error:
-    #Executando por outras fontes
-    caminho_programa = TEMP + '\\speedtest.exe'
+    # Executando por outras fontes
+    caminho_programa = 'Sources\\speedtest.exe'
 
 # Parametros do speedtest.exe
 comando = [caminho_programa, '--accept-license', '--accept-gdpr']
 
 tentativa = 0
 while tentativa < 3:
-    print('Executando teste de conexão...')
+    print('Executando teste de conexão...\n')
     try:
-        #Executa o speedtest.exe e captura a saida do comando para a variavel: resultado
-        resultado = run(comando, text=True, capture_output=True, check=True).stdout
+        # Executa o speedtest.exe e captura a saida do comando para a variavel: resultado
+        resultado = run(comando, text=True,
+                        capture_output=True, check=True).stdout
 
     except CalledProcessError as error:
         # Codigo de retorno 2, significa que ocorreu um erro na comunicação.
@@ -33,7 +32,7 @@ while tentativa < 3:
             print('Falha durante o teste, tentando novamente...')
             tentativa += 1
             continue
-        
+
         # Encerra o programa para qualquer outro codigo diferente de 0
         print(f'Codigo {error.returncode} na execução do comando:')
         print(f'Erro: {error.stderr}')
@@ -45,37 +44,54 @@ while tentativa < 3:
         print(error.__class__)
         break
 
+    # Informações a capturar via regex === ESTUDAR MAIS SOBRE ===
+    dados = {}
+    capturar_dados = {'imagem': r'Result URL:\s*(\S+)',
+             'provedor': r'ISP:\s+(.+)\n',
+             'servidor': r'Server:\s+(.+)\n',
+             'download': r'Download:\s+([\d.]+)\s+Mbps',
+             'upload': r'Upload:\s+([\d.]+)\s+Mbps',
+             'ping': r'Idle Latency:\s+([\d.]+)\s+ms',
+             'packet_loss': r'Packet Loss:\s+([\d.]+)%'}
+    
     try:
         # Captura as informações de saida através de expresões regex. ===ESTUDAR MAIS SOBRE===
-        provedor = re.search(r'ISP:\s+(.+)\n', resultado).group(1)
-        servidor = re.search(r'Server:\s+(.+)\n', resultado).group(1)
-        download = re.search(r'Download:\s+([\d.]+)\s+Mbps', resultado).group(1)
-        upload = re.search(r'Upload:\s+([\d.]+)\s+Mbps', resultado).group(1)
-        ping = re.search(r'Idle Latency:\s+([\d.]+)\s+ms', resultado).group(1)
-        packet_loss = re.search(r'Packet Loss:\s+([\d.]+)%', resultado).group(1)
-        imagem = re.search(r'Result URL:\s*(\S+)', resultado).group(1)
-
+        for dado, expressao in capturar_dados.items():
+            dados[dado] = re.search(expressao, resultado).group(1)
+            
     except AttributeError:
         # Caso entre nessa exceção significa que:
-        # Se caso alguma informação estiver faltando ao definir as variaveis, o programa é executado novamente.
-        print('Falha durante o teste, tentando novamente...')
-        tentativa += 1
-        continue
+        # O teste foi interrompido ou não foi executado até o final, portanto as expressões não conseguiram localizar todos os dados.
+        # Em seguida ele testa qual informação não foi encontrada e alerta o usuario.
+
+        # Se a chave "imagem" não for encontrada em "dados", significa que teste não foi executado completamente.
+        # Logo não precisa testar o restante. Então, faz o teste novamente.
+        if 'imagem' not in dados:
+            print('Falha durante o teste, tentando novamente...')
+            tentativa += 1
+            continue
+
+        # Caso a imagem exista, significa que o teste foi executado, mas ainda sim alguma informação está em falta.
+        # Nota: Normalmente essa informação é o "packet_loss".
+        print('Erro ao obter os dados:')
+        for chave in capturar_dados.keys():
+            if chave not in dados:
+                print(chave, end='\n\n')
+                dados[chave] = 'Erro'
 
     except Exception as error:
         print('Erro desconhecido durante o teste')
         print(error.__class__)
 
-    else:
-        print(f'\nResultado do Teste:'
-        f'\nProvedor Interno: {provedor}'
-        f'\nServidor Destino: {servidor}'
-        f'\nLatencia: {ping} ms'
-        f'\nDownload: {download} Mbps'
-        f'\nUpload: {upload} Mbps'
-        f'\nPacket Loss: {packet_loss} %'
-        f'\nImagem: {imagem}')
-        break
+    print(f'\nResultado do Teste:'
+          f'\nProvedor Interno: {dados["provedor"]}'
+          f'\nServidor Destino: {dados["servidor"]}'
+          f'\nLatencia: {dados["ping"]} ms'
+          f'\nDownload: {dados["download"]} Mbps'
+          f'\nUpload: {dados["upload"]} Mbps'
+          f'\nPacket Loss: {dados["packet_loss"]}'
+          f'\nImagem: {dados["imagem"]}')
+    break
 
 if tentativa >= 3:
     print('\nNúmeros de tentativas excedido, execute o programa novamente!')
