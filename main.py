@@ -20,7 +20,7 @@ except Exception as error:
     caminho_programa = 'Sources\\speedtest.exe'
 
 # Parametros do speedtest.exe
-comando = [caminho_programa, '--accept-license', '--accept-gdpr']
+comando = [caminho_programa, '--accept-license', '--accept-gdpr', '--server-id=18103']
 
 tentativa = 0
 while tentativa < 3:
@@ -105,7 +105,7 @@ if tentativa >= 3:
     exit()
 
 # EM TESTES (FUNCIONAL)
-Teams = pymsteams.connectorcard("Seu Webhook Teams")
+Teams = pymsteams.connectorcard("Webhook teams")
 
 mensagem = f'Maquina: {NOME_MAQUINA} ({IP_MAQUINA})\
             \n {DATA} as {HORA}\
