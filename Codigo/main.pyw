@@ -5,7 +5,6 @@ import re
 import sys
 import socket
 import datetime
-from logging.handlers import TimedRotatingFileHandler
 
 # Configurações iniciais das bibliotecas
 logger = configurar_logger()
@@ -164,14 +163,29 @@ while tentativas <= 3:
 
         resultado += mensagem_extra
         teams.text(resultado)
-        teams.send()
+
+        try:
+            logger.info('Enviando relatorio para o teams...')
+            teams.send()
+            logger.info('Enviando com sucesso...')
+
+        except Exception as error:
+            logger.error('Erro desconhecido ao enviar relatorio para o Teams')
+            logger.error(f'{error.__class__}')
 
     elif debug:
         resultado += '\n\n!!Modo Depuração!!'
         teams.text(resultado)
-        teams.send()
 
-    
+        try:
+            logger.info('Enviando relatorio para o teams...')
+            teams.send()
+            logger.info('Enviando com sucesso...')
+
+        except Exception as error:
+            logger.error('Erro desconhecido ao enviar relatorio para o Teams')
+            logger.error(f'{error.__class__}')
+
     else:
         logger.info('Internet estavel, armazenando logs apenas na máquina.')
 
