@@ -1,36 +1,43 @@
+from configs import *
+from funcoes import *
 import subprocess as cmd
 import re
 import sys
 import socket
 import datetime
-import funcoes
-import argparse
+from logging.handlers import TimedRotatingFileHandler
 
-# Recebimento de argumentos na execução do script
-argumentos = argparse.ArgumentParser()
-argumentos.add_argument('--servidor', type=str, help='Servidor Destino', default='18103')
-args = argumentos.parse_args()
+# Configurações iniciais das bibliotecas
+logger = configurar_logger()
+args = configurar_argumentos()
+teams = configurar_msteams()
+
+# Parametros do filtro de envio de relatorio
+UPLOAD_MIN = 10
+DOWNLOAD_MIN = 30
+PING_MIN = 150
+PERDA_PACOTE_MIN = 10
 
 # Captura informações da máquina utilizadas pelo programa
 NOME_MAQUINA = socket.gethostname()
 IP_MAQUINA = socket.gethostbyname(socket.gethostname())
-DRIVER = funcoes.obter_Driver_Rede()
+REDE_ATIVA = ...
+DRIVER = obter_Driver_Rede()
 HORA = datetime.datetime.now().time().strftime("%H:%M:%S")
 DATA = datetime.date.today().strftime("%d/%m/%Y")
 
 # Informações para execução do programa
-executavel = 'Sources\\speedtest.exe'
-servidor = args.servidor
-print(servidor)
-argumentos_speedtest = ['--accept-license', '--accept-gdpr', f'--server-id={servidor}']
+caminho_executavel = 'Sources\\speedtest.exe'
+argumentos_speedtest = ['--accept-license', '--accept-gdpr', f'--server-id={args.servidor}']
 
 # Verifica se está sendo executado pelo arquivo binario (gerado pelo Pyinstaller) ou pelo interpretador do Python
 try:
-    executavel = sys._MEIPASS + '\\speedtest.exe'
+    caminho_executavel = sys._MEIPASS + '\\speedtest.exe'
     modo_script = False
 except:
-    print('Iniciado em modo script')
+    logger.info('Iniciado em modo script')
     modo_script = True
+
 
 # Programa Principal
 tentativas = 0
@@ -38,29 +45,31 @@ while tentativas <= 3:
     tentativas += 1
     # Inicia o 'speedtest.exe' e captura sua saida.
     try:
-        print('Executando teste...\n')
-        speedtest = cmd.run(args=argumentos_speedtest, executable=executavel, capture_output=True,
+        logger.info('Executando teste...\n')
+        speedtest = cmd.run([caminho_executavel, *argumentos_speedtest],capture_output=True,
                              text=True, check=True, creationflags=cmd.CREATE_NO_WINDOW)
+        
         saida = speedtest.stdout
 
     except FileNotFoundError:
-        print('speedtest.exe não encontrado')
+        logger.critical('speedtest.exe não encontrado')
         break
 
     except cmd.CalledProcessError as error: 
         # Codigo de retorno 2, significa que ocorreu um erro na comunicação.
         if error.returncode == 2: 
-            print('Falha durante o teste, tentando novamente...')
+            logger.warning('Erro! Falha na comunicacao, tentando novamente...')
             continue
         
-        print(f'ERRO! Codigo {error.returncode}')
-        print(f'Erro: {error.stderr}')
-        print(f'Saida: {error.stdout}')
-        break
+        logger.error(f'ERRO! Codigo {error.returncode}')
+        logger.error(f'Erro: {error.stderr}')
+        logger.error(f'Saida: {error.stdout}') 
+        continue
         
     except Exception as error:
-        print('Erro desconhecido ao iniciar "speedtest.exe"')
-        print(error.__class__)
+        logger.critical('Erro desconhecido ao iniciar "speedtest.exe"')
+        logger.critical(error.__class__)
+        
         break
 
     # Fltro das informações utilizando REGEX
@@ -73,10 +82,15 @@ while tentativas <= 3:
                       'ping': r'Idle Latency:\s+([\d.]+)\s+ms',
                       'packet_loss': r'Packet Loss:\s+([\d.]+)' + '%'}
     
-    # Coloca os valores obtidos pela expressão regex em um dicionario
+    # Coloca os valores obtidos pela expressão regex em um dicionario e já converte os números em float
     try:
         for chave, valor in capturar_dados.items():
             dados[chave] = re.search(valor, saida).group(1)
+
+            try:
+                dados[chave] = float(dados[chave])
+            except Exception as error:
+                logger.warning(f'Erro ao converter valor para float: {chave}')
 
     except AttributeError:
         # Caso entre nessa exceção significa que:
@@ -86,7 +100,7 @@ while tentativas <= 3:
         # Se a chave "imagem" não for encontrada em "dados", significa que teste não foi executado com sucesso.
         # Logo não é preciso testar o restante.
         if 'imagem' not in dados:
-            print('Falha durante o teste, tentando novamente...')
+            logger.warning('Imagem nao foi gerada, tentando novamente...')
             continue
         
         # Se o teste foi finalizado e alguma informaçao esteja faltando, completa o dict com o valor 'Erro'
@@ -96,8 +110,8 @@ while tentativas <= 3:
                 dados[chave] = 'Erro'
 
     except Exception as error:
-        print('Erro desconhecido ao obter as informações')
-        print(error.__class__)
+        logger.critical('Erro desconhecido ao obter as informações')
+        logger.errcriticalor(error.__class__)
         break
 
     resultado = f'Resultado do Teste:\
@@ -113,14 +127,59 @@ while tentativas <= 3:
             \n Packet Loss: {dados["packet_loss"]}\
             \n Imagem: {dados["imagem"] + ".png"}'
     
-    print(resultado)
+    logger.info(resultado)
+
+    # Filtro
+    enviar_relatorio = False
+    debug = True
+    problemas = []
+    if dados['upload'] <= UPLOAD_MIN:
+        logger.warning('Problemas com Upload!')
+        problemas.append('Upload')
+        enviar_relatorio = True
+
+    if dados['download'] <= DOWNLOAD_MIN:
+        logger.warning('Problemas com Download!')
+        problemas.append('Download')
+        enviar_relatorio = True
+
+    if dados['ping'] >= PING_MIN:
+        logger.warning('Problemas com Latencia!')
+        problemas.append('Ping')
+        enviar_relatorio = True
+
+    if dados['packet_loss'] != 'Erro' and dados['packet_loss'] >= 10:
+        logger.warning('Problemas com Perda de Pacotes!')
+        problemas.append('Perda de Pacotes')
+        enviar_relatorio = True
+
+    if enviar_relatorio:
+        mensagem_extra = '\n\nProblemas identificados: '
+
+        for indice ,itens in enumerate(problemas):
+            if indice == len(problemas) - 1:
+                mensagem_extra += f'{itens}.'
+            else:
+                mensagem_extra += f'{itens}, '
+
+        resultado += mensagem_extra
+        teams.text(resultado)
+        teams.send()
+
+    elif debug:
+        resultado += '\n\n!!Modo Depuração!!'
+        teams.text(resultado)
+        teams.send()
+
+    
+    else:
+        logger.info('Internet estavel, armazenando logs apenas na máquina.')
+
+    input('\nPressione Enter para sair...') if modo_script else None
     break
 
 else: # Se o número de tentativas chegar a 3, irá cair nesse bloco.
-    print('\nNúmero de tentativas excedido., encerrando o programa...')
+    logger.error('\nNúmero de tentativas excedido., encerrando o programa...')
     input('\nPressione Enter para sair...') if modo_script else None
-    exit()
+    exit() if modo_script else None
 
-
-funcoes.enviar_Mensagem(resultado)
-input('\nPressione Enter para sair...') if modo_script else None
