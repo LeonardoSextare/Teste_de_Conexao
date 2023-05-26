@@ -6,7 +6,7 @@ O objetivo principal é monitorar a velocidade e qualidade da conexão com a int
 
 
 ## Como Usar
-Ao executar o programa, não irá exibir nenhuma janela e irá gerar um arquivo de texto com o nome "resultado.txt" contendo os dados do programa.
+Ao executar o programa, não irá exibir nenhuma janela e irá gerar uma pasta com o nome "logs" com arquivos contendo os resultados do programa.
 Os dados também serão enviados pelo Microsoft Teams, caso tenha sido configurado o link do Webhook em [funcoes.py](https://github.com/LeonardoSextare/Teste_de_Conexao/blob/main/Codigo/funcoes.py)
 
 É possivel passar o parametro --servidor (ID_servidor) pelo terminal para definir um servidor de destino diferente do padrão. Exemplo: Testar_Conexao.exe --servidor 123456
@@ -26,15 +26,17 @@ Irá ser gerado o arquivo executavel com o nome "Testar_Conexao.exe".
 - subprocess
 - re
 - sys
+- os
 - socket
 - datetime
 - argparse
 - pymsteams
 - wmi
+- logging
 
 
 ## Funcionamento e Dados Coletados
-Captura os dados da velocidade de conexão com a internet utilizando software Speedtest CLI.
+Captura os dados da velocidade de conexão com a internet utilizando software Speedtest CLI e armazena em logs na máquina local.
 
 Captura outras informações da máquina relacionados a conexão.
 
