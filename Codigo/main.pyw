@@ -15,7 +15,7 @@ teams = configurar_msteams()
 UPLOAD_MIN = 10
 DOWNLOAD_MIN = 30
 PING_MIN = 150
-PERDA_PACOTE_MIN = 10
+PERDA_PACOTE_MIN = 15
 
 # Captura informações da máquina utilizadas pelo programa
 NOME_MAQUINA = socket.gethostname()
@@ -147,7 +147,7 @@ while tentativas <= 3:
         problemas.append('Ping')
         enviar_relatorio = True
 
-    if dados['packet_loss'] != 'Erro' and dados['packet_loss'] >= 10:
+    if dados['packet_loss'] != 'Erro' and dados['packet_loss'] >= PERDA_PACOTE_MIN:
         logger.warning('Problemas com Perda de Pacotes!')
         problemas.append('Perda de Pacotes')
         enviar_relatorio = True
