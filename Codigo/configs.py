@@ -4,7 +4,9 @@ import os
 import argparse
 import pymsteams
 
-WEBHOOK_TEAMS = 'https://precisaosistemas.webhook.office.com/webhookb2/e17c48a8-fd56-46ff-af5a-7d9e51eba43f@c31a0c79-c82f-45d6-abed-6a70879752ab/IncomingWebhook/a148630931c34fde8f972eae3e64ef69/a1b7af53-97cf-4af9-995a-4e6742682947'
+
+WEBHOOK_TEAMS = 'Webhook Teams'
+
 
 # Configurações para criação de logger
 def configurar_logger():
@@ -31,11 +33,25 @@ def configurar_logger():
     return logger
 
 # Recebimento de argumentos na execução do script
+
+
 def configurar_argumentos():
     argumentos = argparse.ArgumentParser()
-    argumentos.add_argument('--servidor', type=str, help='Servidor Destino', default='18103')
+    argumentos.add_argument('--servidor', type=str,
+                            help='Servidor Destino', default='18103')
+    argumentos.add_argument('--download', type=int,
+                            help='Download ideal.', default='100')
+    argumentos.add_argument('--upload', type=int,
+                            help='Upload ideal', default='100')
+    argumentos.add_argument('--latencia', type=int,
+                            help='Latencia maxima.', default='60')
+    argumentos.add_argument('--pacote', type=int,
+                            help='Perda de Pacotes Minimo', default='15')
+    argumentos.add_argument('--debug', action='store_true',
+                            help='Ignora e filtro e envia o relatorio')
 
     return argumentos.parse_args()
+
 
 def configurar_msteams():
     teams = pymsteams.connectorcard(WEBHOOK_TEAMS)
