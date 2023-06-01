@@ -1,5 +1,6 @@
+!
 ![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=flat)
-![Badge em Desenvolvimento](https://img.shields.io/badge/Python-v3.11-blue)
+![Versão Python](https://img.shields.io/badge/Python-v3.11-blue)
 
 #  🌐 Teste de Conexão
 O objetivo principal é monitorar a velocidade e qualidade da conexão com a internet e caso necessario, solicitar suporte.
