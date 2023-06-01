@@ -38,17 +38,17 @@ def configurar_logger():
 def configurar_argumentos():
     argumentos = argparse.ArgumentParser()
     argumentos.add_argument('--servidor', type=str,
-                            help='Servidor Destino', default='18103')
+                            help='Define um servidor de destino diferente do padrão.', default='18103')
     argumentos.add_argument('--download', type=int,
-                            help='Download ideal.', default='100')
+                            help='Define a velocidade média de download em Mbps para usar como criterio para envio de notificação.', default='100')
     argumentos.add_argument('--upload', type=int,
-                            help='Upload ideal', default='100')
+                            help='Define a velocidade média de upload em Mbps para usar como criterio para envio de notificação.', default='100')
     argumentos.add_argument('--latencia', type=int,
-                            help='Latencia maxima.', default='60')
+                            help='Define a latencia máxima em milisegundos para usar como criterio para envio de notificação.', default='60')
     argumentos.add_argument('--pacote', type=int,
-                            help='Perda de Pacotes Minimo', default='15')
+                            help='Define a perda de pacotes máxima em porcetagem para usar como criterio para envio de notificação.', default='15')
     argumentos.add_argument('--debug', action='store_true',
-                            help='Ignora e filtro e envia o relatorio')
+                            help='Quando presente envia o resultado ignorando todos criterios estabelecidos para notificação.')
 
     return argumentos.parse_args()
 

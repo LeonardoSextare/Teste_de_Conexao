@@ -31,7 +31,6 @@ DATA = datetime.date.today().strftime("%d/%m/%Y")
 # Informações para execução do programa
 caminho_executavel = 'Sources\\speedtest.exe'
 argumentos_speedtest = ['--accept-license', '--accept-gdpr', 
-                        
                         f'--server-id={args.servidor}']
 
 # Verifica se está sendo executado pelo arquivo binario (gerado pelo Pyinstaller) ou pelo interpretador do Python
