@@ -23,7 +23,7 @@ Exemplo: Testar_Conexao.exe --servidor 123456 --download 80 --upload 50 --latenc
 [Como obter o ID do servidor](https://www.dcmembers.com/skwire/how-to-find-a-speedtest-net-server-id/)
 
 ## Como Compilar
-- Instalar todas as [bibliotecas](https://github.com/LeonardoSextare/Teste_de_Conexao/edit/main/README.md#bibliotecas-utilizadas)
+- Instalar todas as bibliotecas
 - Instalar a biblioteca [pyinstaller](https://pypi.org/project/pyinstaller/)
 - Executar o arquivo Compilar.bat
 
